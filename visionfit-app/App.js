@@ -2,27 +2,25 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
 
-import OnboardingScreen  from './src/screens/OnboardingScreen';
+import LoadingScreen from './src/screens/LoadingScreen';
+import AuthScreen from './src/screens/AuthScreen';
 import DashboardScreen   from './src/screens/DashboardScreen';
-import HistoryScreen     from './src/screens/HistoryScreen';
 import CatalogScreen     from './src/screens/CatalogScreen';
-import EducationScreen   from './src/screens/EducationScreen';
 import ProfileScreen     from './src/screens/ProfileScreen';
-
-import {
-  HomeIcon,
-  ClockIcon,
-  GridIcon,
-  BookIcon,
-  PersonIcon,
-} from './src/components/TabIcons';
+import FavoritesScreen   from './src/screens/FavoritesScreen';
+import PrescriptionScreen from './src/screens/PrescriptionScreen';
+import FaceScanScreen from './src/screens/FaceScanScreen';
+import ProductScreen from './src/screens/ProductScreen';
+import CartScreen from './src/screens/CartScreen';
+import CheckoutScreen from './src/screens/CheckoutScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab   = createBottomTabNavigator();
 
-const ACTIVE_COLOR   = '#3B5A3E'; // dark forest green  (active)
-const INACTIVE_COLOR = '#A89F8C'; // warm tan-gray       (inactive)
+const ACTIVE_COLOR   = '#000000';
+const INACTIVE_COLOR = '#8A8A8A';
 
 function MainTabs() {
   return (
@@ -32,42 +30,42 @@ function MainTabs() {
         tabBarActiveTintColor:   ACTIVE_COLOR,
         tabBarInactiveTintColor: INACTIVE_COLOR,
         tabBarStyle: {
-          backgroundColor: '#F8F7F2',
+          backgroundColor: '#FFFFFF',
           borderTopWidth: 1,
-          borderTopColor: '#E8E5DE',
-          height: 70,
-          paddingBottom: 10,
-          paddingTop: 8,
+          borderTopColor: '#D7D7D7',
+          height: 66,
+          paddingBottom: 7,
+          paddingTop: 6,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: '700',
           letterSpacing: 0.1,
         },
         tabBarIcon: ({ color, focused }) => {
-          const size = 23;
+          const size = 27;
           switch (route.name) {
             case 'Home':
-              return <HomeIcon color={color} size={size} filled={focused} />;
-            case 'History':
-              return <ClockIcon color={color} size={size} />;
-            case 'Catalog':
-              return <GridIcon color={color} size={size} />;
-            case 'Education':
-              return <BookIcon color={color} size={size} />;
+              return <Ionicons name={focused ? 'home' : 'home-outline'} color={color} size={size} />;
+            case 'Category':
+              return <Ionicons name="menu-outline" color={color} size={size + 3} />;
+            case 'Favorites':
+              return <Ionicons name={focused ? 'heart' : 'heart-outline'} color={color} size={size} />;
+            case 'Cart':
+              return <Ionicons name={focused ? 'cart' : 'cart-outline'} color={color} size={size} />;
             case 'Profile':
-              return <PersonIcon color={color} size={size} />;
+              return <Ionicons name={focused ? 'person' : 'person-outline'} color={color} size={size} />;
             default:
               return null;
           }
         },
       })}
     >
-      <Tab.Screen name="Home"      component={DashboardScreen} />
-      <Tab.Screen name="History"   component={HistoryScreen} />
-      <Tab.Screen name="Catalog"   component={CatalogScreen} />
-      <Tab.Screen name="Education" component={EducationScreen} />
-      <Tab.Screen name="Profile"   component={ProfileScreen} />
+      <Tab.Screen name="Home" component={DashboardScreen} />
+      <Tab.Screen name="Category" component={CatalogScreen} />
+      <Tab.Screen name="Favorites" component={FavoritesScreen} />
+      <Tab.Screen name="Cart" component={CartScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }
@@ -76,8 +74,15 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+        <Stack.Screen name="Loading" component={LoadingScreen} />
+        <Stack.Screen name="Auth" component={AuthScreen} />
         <Stack.Screen name="MainTabs"   component={MainTabs} />
+        <Stack.Screen name="Prescription" component={PrescriptionScreen} />
+        <Stack.Screen name="FaceScan" component={FaceScanScreen} />
+        <Stack.Screen name="Product" component={ProductScreen} />
+        <Stack.Screen name="Cart" component={CartScreen} />
+        <Stack.Screen name="Checkout" component={CheckoutScreen} />
+        <Stack.Screen name="Catalog" component={CatalogScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -1,19 +1,20 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';\nimport { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function OnboardingScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        
+
         {/* Eye Icon Graphic */}
         <View style={styles.iconContainer}>
           <View style={styles.outerCircle}>
             <View style={styles.innerCircle}>
               <View style={styles.eyeShape}>
-                 <View style={styles.pupil}>
-                   <View style={styles.pupilHighlight} />
-                 </View>
+                <View style={styles.pupil}>
+                  <View style={styles.pupilHighlight} />
+                </View>
               </View>
             </View>
           </View>
@@ -24,17 +25,17 @@ export default function OnboardingScreen({ navigation }) {
       </View>
 
       <View style={styles.footer}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.button}
           onPress={() => navigation.navigate('MainTabs')}
         >
           <Text style={styles.buttonText}>Get started  ›</Text>
         </TouchableOpacity>
-        
+
         <Text style={styles.loginText}>
           Already screening with us? <Text style={styles.loginLink}>Log in</Text>
         </Text>
-        
+
         <View style={styles.pagination}>
           <View style={[styles.dot, styles.activeDot]} />
           <View style={styles.dot} />

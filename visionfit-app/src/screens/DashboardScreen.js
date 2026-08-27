@@ -1,218 +1,24 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';\nimport { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, useWindowDimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 
-export default function DashboardScreen() {
-  return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greetingText}>GOOD MORNING</Text>
-            <Text style={styles.nameText}>Hi, Amara</Text>
-          </View>
-          <TouchableOpacity style={styles.bellButton}>
-            <Text style={styles.bellEmoji}>🔔</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Daily Habit Card */}
-        <View style={styles.habitCard}>
-          <Text style={styles.habitLabel}>DAILY HABIT</Text>
-          <Text style={styles.habitTitle}>The 20-20-20 rule</Text>
-          <Text style={styles.habitDesc}>
-            Every 20 minutes, look 20 feet away for 20 seconds — it gives your focusing muscles a break.
-          </Text>
-        </View>
-
-        {/* Quick Actions */}
-        <Text style={styles.sectionTitle}>Quick actions</Text>
-        <View style={styles.actionsGrid}>
-          <TouchableOpacity style={styles.actionCard}>
-            <View style={[styles.iconWrapper, { backgroundColor: '#E8F5E9' }]}>
-              <Text style={styles.actionEmoji}>👁</Text>
-            </View>
-            <Text style={styles.actionText}>Visual acuity</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.actionCard}>
-            <View style={[styles.iconWrapper, { backgroundColor: '#E8F5E9' }]}>
-              <Text style={styles.actionEmoji}>🎨</Text>
-            </View>
-            <Text style={styles.actionText}>Color check</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.actionCard}>
-            <View style={[styles.iconWrapper, { backgroundColor: '#FFF3E0' }]}>
-              <Text style={styles.actionEmoji}>😶</Text>
-            </View>
-            <Text style={styles.actionText}>Face shape</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.actionCard}>
-            <View style={[styles.iconWrapper, { backgroundColor: '#FCE4EC' }]}>
-              <Text style={styles.actionEmoji}>🕶</Text>
-            </View>
-            <Text style={styles.actionText}>Find frames</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Progress */}
-        <Text style={styles.sectionTitle}>Your progress</Text>
-        <View style={styles.progressCard}>
-          <View>
-            <Text style={styles.progressNumber}>7</Text>
-            <Text style={styles.progressLabel}>screenings completed</Text>
-          </View>
-          <View style={styles.chartBars}>
-            <View style={[styles.bar, { height: 15, backgroundColor: '#D7E3D8' }]} />
-            <View style={[styles.bar, { height: 25, backgroundColor: '#D7E3D8' }]} />
-            <View style={[styles.bar, { height: 20, backgroundColor: '#D7E3D8' }]} />
-            <View style={[styles.bar, { height: 40, backgroundColor: '#618264' }]} />
-            <View style={[styles.bar, { height: 30, backgroundColor: '#2D3930' }]} />
-          </View>
-        </View>
-
-      </ScrollView>
-    </SafeAreaView>
-  );
+const woman='https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=900&q=82';
+const man='https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=900&q=82';
+const frameShapes=['SQUARE','RECTANGLE','ROUND','CAT-EYE','BROWLINE','AVIATOR'];
+function Glasses({gold,round}){return <View style={s.glasses}><View style={[s.lens,round&&s.round,gold&&s.gold]}/><View style={[s.bridge,gold&&s.goldFill]}/><View style={[s.lens,round&&s.round,gold&&s.gold]}/></View>}
+function Shop({onPress}){return <TouchableOpacity style={s.shop} onPress={onPress}><Text style={s.shopText}>Shop now</Text></TouchableOpacity>}
+function Tile({name,index,width}){return <TouchableOpacity style={[s.tile,{width}]}><Glasses gold={index>3} round={index===2||index===3}/><Text style={s.tileText}>{name}</Text></TouchableOpacity>}
+export default function DashboardScreen({navigation}){
+  const { width }=useWindowDimensions(); const gutter=16; const contentWidth=width-gutter*2; const tileWidth=(contentWidth-12)/3; const productWidth=(contentWidth-16)/3; const heroHeight=Math.min(Math.max(width*.68,230),310); const go=()=>navigation.navigate('Catalog');
+  return <SafeAreaView style={s.container} edges={['top']}><ScrollView contentContainerStyle={[s.content,{paddingHorizontal:gutter}]} showsVerticalScrollIndicator={false}>
+    <Text style={s.logo}>VISIONFIT</Text><View style={s.search}><Ionicons name="search-outline" size={18}/><Text style={s.searchText}>Search frames, styles, brands</Text><Ionicons name="camera-outline" size={20}/></View>
+    <View style={[s.hero,{height:heroHeight}]}><Image source={{uri:woman}} style={s.photo}/><Shop onPress={go}/></View>
+    <Text style={s.heading}>SHOP BY FRAME{`\n`}SHAPE</Text><Text style={s.fine}>Discover frames selected for every face, style and moment.</Text><View style={s.grid}>{frameShapes.map((x,i)=><Tile key={x} name={x} index={i} width={tileWidth}/>)}</View>
+    <View style={[s.hero,{height:heroHeight*.72}]}><Image source={{uri:man}} style={s.photo}/><Shop onPress={go}/></View>
+    <Text style={s.heading}>UNDER ₱1000 PICKS</Text><View style={s.products}>{[0,1,2].map(i=><TouchableOpacity style={[s.product,{width:productWidth}]} key={i} onPress={()=>navigation.navigate('Product')}><Ionicons name="heart-outline" size={17} style={s.heart}/><Glasses gold={i===1} round={i===1}/><Text style={s.productText}>Margaret{`\n`}₱999</Text></TouchableOpacity>)}</View><Shop onPress={go}/>
+    <Text style={s.heading}>SHOP BY FACE{`\n`}SHAPE</Text><Text style={s.fine}>Find your most flattering fit in a few easy steps.</Text><View style={s.faces}>{['ROUND','HEART','DIAMOND','OVAL','SQUARE'].map((x,i)=><TouchableOpacity style={s.face} onPress={()=>navigation.navigate('FaceScan')} key={x}><Image source={{uri:i===3?man:woman}} style={s.avatar}/><Text style={s.tileText}>{x}</Text></TouchableOpacity>)}</View><Shop onPress={()=>navigation.navigate('FaceScan')}/>
+    <Text style={s.heading}>FRAMES FOR{`\n`}YOUR LIFE</Text><Text style={s.fine}>Explore lenses and frames designed around how you live.</Text><View style={s.grid}>{['EYEGLASS','SUNGLASSES','BLUE LIGHT','SPORTS','TRANSITIONS','EYEQLENZ'].map((x,i)=><Tile key={x} name={x} index={i} width={tileWidth}/>)}</View><Shop onPress={go}/>
+  </ScrollView></SafeAreaView>;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F7F2', // Very light beige/yellow
-  },
-  scrollContent: {
-    padding: 24,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 30,
-    marginTop: 10,
-  },
-  greetingText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#888',
-    letterSpacing: 0.5,
-    marginBottom: 4,
-  },
-  nameText: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#222',
-  },
-  bellButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#FFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
-  },
-  bellEmoji: { fontSize: 20 },
-  actionEmoji: { fontSize: 22 },
-  habitCard: {
-    backgroundColor: '#618264',
-    borderRadius: 20,
-    padding: 24,
-    marginBottom: 30,
-  },
-  habitLabel: {
-    color: '#E0EAE1',
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    marginBottom: 8,
-  },
-  habitTitle: {
-    color: '#FFF',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  habitDesc: {
-    color: '#E0EAE1',
-    fontSize: 14,
-    lineHeight: 22,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#222',
-    marginBottom: 15,
-  },
-  actionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  actionCard: {
-    backgroundColor: '#FFF',
-    width: '48%',
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  iconWrapper: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  actionText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#333',
-  },
-  progressCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 20,
-    padding: 24,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 2,
-    marginBottom: 20,
-  },
-  progressNumber: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#222',
-    marginBottom: 4,
-  },
-  progressLabel: {
-    fontSize: 13,
-    color: '#777',
-  },
-  chartBars: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-  },
-  bar: {
-    width: 6,
-    borderRadius: 3,
-    marginLeft: 4,
-  },
-});
+const s=StyleSheet.create({container:{flex:1,backgroundColor:'#fff'},content:{paddingTop:12,paddingBottom:28},logo:{fontSize:27,fontWeight:'900',letterSpacing:-1.4,marginBottom:12},search:{height:42,borderRadius:22,backgroundColor:'#E8DDF2',flexDirection:'row',alignItems:'center',gap:9,paddingHorizontal:14,marginBottom:14},searchText:{flex:1,fontSize:13,color:'#525252'},hero:{borderRadius:18,overflow:'hidden',alignItems:'center',justifyContent:'flex-end',paddingBottom:18,marginBottom:22},photo:{position:'absolute',width:'100%',height:'100%'},shop:{height:48,minWidth:162,borderRadius:26,backgroundColor:'#000',alignItems:'center',justifyContent:'center',marginTop:13},shopText:{color:'#fff',fontSize:16,fontWeight:'800'},heading:{fontSize:29,lineHeight:31,letterSpacing:-.8,fontWeight:'900',marginTop:3},fine:{fontSize:11,color:'#707070',lineHeight:15,marginTop:6,marginBottom:10},grid:{flexDirection:'row',flexWrap:'wrap',gap:6},tile:{height:88,borderWidth:1,borderColor:'#484848',borderRadius:5,alignItems:'center',justifyContent:'center'},glasses:{flexDirection:'row',alignItems:'center'},lens:{width:34,height:21,borderWidth:2,borderColor:'#202020',borderRadius:5},round:{borderRadius:14},gold:{borderColor:'#B49A68'},bridge:{width:8,height:2,backgroundColor:'#202020'},goldFill:{backgroundColor:'#B49A68'},tileText:{fontSize:9,fontWeight:'800',marginTop:7},products:{flexDirection:'row',gap:8,marginBottom:2},product:{height:126,borderWidth:1,borderColor:'#555',borderRadius:6,padding:8,justifyContent:'center'},heart:{position:'absolute',right:7,top:7},productText:{fontSize:10,marginTop:9},faces:{flexDirection:'row',flexWrap:'wrap',justifyContent:'space-around',rowGap:14,marginVertical:12},face:{width:62,alignItems:'center'},avatar:{height:52,width:52,borderRadius:26,borderWidth:2,borderColor:'#000'}});

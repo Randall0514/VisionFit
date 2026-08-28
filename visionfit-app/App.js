@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import LoadingScreen from './src/screens/LoadingScreen';
 import AuthScreen from './src/screens/AuthScreen';
+import VerificationScreen from './src/screens/VerificationScreen';
 import DashboardScreen   from './src/screens/DashboardScreen';
 import CatalogScreen     from './src/screens/CatalogScreen';
 import ProfileScreen     from './src/screens/ProfileScreen';
@@ -76,6 +77,7 @@ export default function App() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Loading" component={LoadingScreen} />
         <Stack.Screen name="Auth" component={AuthScreen} />
+        <Stack.Screen name="Verification" component={VerificationScreen} />
         <Stack.Screen name="MainTabs"   component={MainTabs} />
         <Stack.Screen name="Prescription" component={PrescriptionScreen} />
         <Stack.Screen name="FaceScan" component={FaceScanScreen} />

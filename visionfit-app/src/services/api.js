@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LOCAL_IP = '192.168.1.11';
 const API_URL = Platform.select({
@@ -6,6 +7,19 @@ const API_URL = Platform.select({
   ios: `http://localhost:5000/api`,
   default: `http://localhost:5000/api`
 });
+
+const getToken = async () => {
+  try {
+    return await AsyncStorage.getItem('token');
+  } catch {
+    return null;
+  }
+};
+
+const authHeaders = async () => {
+  const token = await getToken();
+  return token ? { 'Authorization': `Bearer ${token}` } : {};
+};
 
 const api = {
   async sendVerificationCode(data) {
@@ -64,21 +78,23 @@ const api = {
   },
 
   async getMe(token) {
-    const response = await fetch(`${API_URL}/auth/me`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+    const headers = token
+      ? { 'Authorization': `Bearer ${token}` }
+      : await authHeaders();
+    const response = await fetch(`${API_URL}/auth/me`, { headers });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'Failed to get user');
     return result;
   },
 
-  async updateMe(token, data) {
+  async updateMe(data) {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(await authHeaders())
+    };
     const response = await fetch(`${API_URL}/auth/me`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
+      headers,
       body: JSON.stringify(data)
     });
     const result = await response.json();
@@ -87,4 +103,5 @@ const api = {
   }
 };
 
+export { getToken };
 export default api;

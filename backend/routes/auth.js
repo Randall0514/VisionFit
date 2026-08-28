@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const VerificationCode = require('../models/VerificationCode');
 const auth = require('../middleware/auth');
+const adminAuth = require('../middleware/admin');
 const { generateCode, sendVerificationEmail } = require('../utils/email');
 
 const router = express.Router();
@@ -134,7 +135,7 @@ router.post('/register', async (req, res) => {
 
     res.status(201).json({
       token,
-      user: { id: user._id, firstName: user.firstName, lastName: user.lastName, email: user.email }
+      user: { id: user._id, firstName: user.firstName, lastName: user.lastName, email: user.email, role: user.role }
     });
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
@@ -159,7 +160,7 @@ router.post('/login', async (req, res) => {
 
     res.json({
       token,
-      user: { id: user._id, firstName: user.firstName, lastName: user.lastName, email: user.email }
+      user: { id: user._id, firstName: user.firstName, lastName: user.lastName, email: user.email, role: user.role }
     });
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
@@ -173,6 +174,7 @@ router.get('/me', auth, async (req, res) => {
       firstName: req.user.firstName,
       lastName: req.user.lastName,
       email: req.user.email,
+      role: req.user.role,
       faceShape: req.user.faceShape,
       prescription: req.user.prescription
     }
@@ -192,6 +194,32 @@ router.put('/me', auth, async (req, res) => {
 
     await req.user.save();
     res.json({ user: req.user });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.post('/create-admin', adminAuth, async (req, res) => {
+  try {
+    const { firstName, lastName, email, password } = req.body;
+
+    if (!email || !firstName || !lastName || !password) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+      return res.status(400).json({ error: 'Email already registered' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = new User({ firstName, lastName, email: email.toLowerCase(), password: hashedPassword, role: 'admin' });
+    await user.save();
+
+    res.status(201).json({
+      message: 'Admin account created',
+      user: { id: user._id, firstName: user.firstName, lastName: user.lastName, email: user.email, role: user.role }
+    });
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }

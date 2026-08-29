@@ -2,27 +2,40 @@ import React, { useEffect, useState } from 'react';
 import api from '../api';
 import StatsCard from '../components/StatsCard';
 import type { DashboardStats } from '../types';
+import { colors, radii, fontSize, fontWeight, shadow, badgeColor, badgeBase, transition } from '../theme';
 
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lowStockCount, setLowStockCount] = useState(0);
 
   useEffect(() => {
     api.getDashboard().then(setStats).catch(console.error).finally(() => setLoading(false));
+    api.getLowStock().then((items) => setLowStockCount(items.length)).catch(console.error);
   }, []);
 
-  if (loading) return <div style={{ padding: 20, color: '#888' }}>Loading dashboard...</div>;
-  if (!stats) return <div style={{ padding: 20, color: '#d33' }}>Failed to load dashboard</div>;
+  if (loading) return <div style={styles.loading}>Loading dashboard...</div>;
+  if (!stats) return <div style={styles.error}>Failed to load dashboard</div>;
 
   return (
     <div>
       <h2 style={styles.heading}>Dashboard</h2>
       <div style={styles.statsRow}>
-        <StatsCard title="Total Orders" value={stats.totalOrders} color="#6C3BC6" />
-        <StatsCard title="Revenue" value={`₱${stats.totalRevenue.toLocaleString()}`} color="#315B4A" />
-        <StatsCard title="Users" value={stats.totalUsers} color="#2D5F8A" />
-        <StatsCard title="Processing" value={stats.statusCounts.processing || 0} subtitle="Orders in progress" color="#B45A3C" />
+        <StatsCard title="Total Orders" value={stats.totalOrders} color={colors.primary} />
+        <StatsCard title="Revenue" value={`₱${stats.totalRevenue.toLocaleString()}`} color={colors.green} />
+        <StatsCard title="Users" value={stats.totalUsers} color={colors.blue} />
+        <StatsCard title="Processing" value={stats.statusCounts.processing || 0} subtitle="Orders in progress" color={colors.orange} />
       </div>
+
+      {lowStockCount > 0 && (
+        <div style={styles.alertCard}>
+          <span>⚠️</span>
+          <div>
+            <strong>{lowStockCount} product{lowStockCount !== 1 ? 's' : ''} low on stock</strong>
+            <p style={{ margin: 0, fontSize: fontSize.sm, color: colors.textSecondary }}>Check Inventory to restock items below threshold.</p>
+          </div>
+        </div>
+      )}
 
       <div style={styles.tableCard}>
         <h3 style={styles.tableTitle}>Recent Orders</h3>
@@ -39,19 +52,23 @@ export default function Dashboard() {
             {stats.recentOrders.map((order) => {
               const customer = order.user;
               const name = 'firstName' in customer ? `${customer.firstName} ${customer.lastName}` : 'Unknown';
+              const bc = badgeColor(order.status as any);
               return (
-                <tr key={order._id} style={styles.tr}>
-                  <td style={styles.td}>{name}</td>
+                <tr key={order._id} style={styles.tr}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.hover; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                >
+                  <td style={styles.td}><span style={styles.customerName}>{name}</span></td>
                   <td style={styles.td}>₱{order.totalPrice.toLocaleString()}</td>
                   <td style={styles.td}>
-                    <span style={{ ...styles.badge, ...badgeColor(order.status) }}>{order.status}</span>
+                    <span style={{ ...badgeBase, backgroundColor: bc.bg, color: bc.color }}>{order.status}</span>
                   </td>
                   <td style={styles.td}>{new Date(order.createdAt).toLocaleDateString()}</td>
                 </tr>
               );
             })}
             {stats.recentOrders.length === 0 && (
-              <tr><td style={{ ...styles.td, textAlign: 'center', color: '#aaa' }} colSpan={4}>No orders yet</td></tr>
+              <tr><td style={{ ...styles.td, textAlign: 'center', color: colors.textMuted }} colSpan={4}>No orders yet</td></tr>
             )}
           </tbody>
         </table>
@@ -60,24 +77,79 @@ export default function Dashboard() {
   );
 }
 
-function badgeColor(status: string): React.CSSProperties {
-  const colors: Record<string, { background: string; color: string }> = {
-    unpaid: { background: '#fef3c7', color: '#92400e' },
-    processing: { background: '#dbeafe', color: '#1e40af' },
-    shipped: { background: '#d1fae5', color: '#065f46' },
-    delivered: { background: '#ede9fe', color: '#5b21b6' },
-  };
-  const c = colors[status] || { background: '#f3f4f6', color: '#374151' };
-  return { backgroundColor: c.background, color: c.color, padding: '3px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600 };
-}
-
 const styles: Record<string, React.CSSProperties> = {
-  heading: { fontSize: 22, fontWeight: 800, marginBottom: 20 },
-  statsRow: { display: 'flex', gap: 16, marginBottom: 28, flexWrap: 'wrap' },
-  tableCard: { backgroundColor: '#fff', borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' },
-  tableTitle: { fontSize: 16, fontWeight: 700, padding: '16px 20px', margin: 0, borderBottom: '1px solid #eee' },
-  table: { width: '100%', borderCollapse: 'collapse' },
-  th: { textAlign: 'left', padding: '10px 20px', fontSize: 12, fontWeight: 600, color: '#888', borderBottom: '1px solid #eee', textTransform: 'uppercase' },
-  tr: { borderBottom: '1px solid #f5f5f5' },
-  td: { padding: '12px 20px', fontSize: 14 },
+  heading: {
+    fontSize: fontSize.heading,
+    fontWeight: fontWeight.extrabold,
+    marginBottom: 24,
+    color: colors.text,
+  },
+  statsRow: {
+    display: 'flex',
+    gap: 16,
+    marginBottom: 28,
+    flexWrap: 'wrap',
+  },
+  alertCard: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    padding: '14px 20px',
+    marginBottom: 20,
+    borderRadius: radii.lg,
+    backgroundColor: '#FFF8E1',
+    border: `1px solid ${colors.orange}`,
+    fontSize: fontSize.md,
+    color: colors.text,
+  },
+  tableCard: {
+    backgroundColor: colors.white,
+    borderRadius: radii.xl,
+    overflow: 'hidden',
+    boxShadow: shadow.card,
+  },
+  tableTitle: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+    padding: '18px 24px',
+    margin: 0,
+    borderBottom: `1px solid ${colors.border}`,
+    color: colors.text,
+  },
+  table: {
+    width: '100%',
+    borderCollapse: 'collapse',
+  },
+  th: {
+    textAlign: 'left',
+    padding: '12px 24px',
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
+    borderBottom: `1px solid ${colors.border}`,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  tr: {
+    borderBottom: `1px solid ${colors.borderLight}`,
+    transition: `background-color ${transition.fast}`,
+  },
+  td: {
+    padding: '14px 24px',
+    fontSize: fontSize.md,
+    color: colors.text,
+  },
+  customerName: {
+    fontWeight: fontWeight.medium,
+  },
+  loading: {
+    padding: 24,
+    color: colors.textMuted,
+    fontSize: fontSize.md,
+  },
+  error: {
+    padding: 24,
+    color: colors.red,
+    fontSize: fontSize.md,
+  },
 };

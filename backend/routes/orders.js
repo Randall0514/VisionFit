@@ -1,5 +1,6 @@
 const express = require('express');
 const Order = require('../models/Order');
+const Notification = require('../models/Notification');
 const auth = require('../middleware/auth');
 const adminAuth = require('../middleware/admin');
 
@@ -104,6 +105,16 @@ router.post('/', auth, async (req, res) => {
       status: 'processing'
     });
     await order.save();
+
+    try {
+      await Notification.create({
+        type: 'new_order',
+        title: 'New Order',
+        message: `New order #${order._id.toString().slice(-8)} for ₱${totalPrice.toLocaleString()}`,
+        link: `/orders/${order._id}`,
+      });
+    } catch (e) { /* notification failure shouldn't block order */ }
+
     res.status(201).json(order);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
@@ -140,6 +151,50 @@ router.put('/:id/status', auth, async (req, res) => {
     }
     res.json(order);
   } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.get('/admin/analytics', adminAuth, async (req, res) => {
+  try {
+    const { from, to } = req.query;
+    const dateFilter = {};
+    if (from) dateFilter.$gte = new Date(from);
+    if (to) dateFilter.$lte = new Date(to);
+    const matchStage = Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {};
+
+    const revenueByDay = await Order.aggregate([
+      { $match: matchStage },
+      { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, revenue: { $sum: '$totalPrice' }, orders: { $sum: 1 } } },
+      { $sort: { _id: 1 } },
+      { $limit: 90 }
+    ]);
+
+    const statusBreakdown = await Order.aggregate([
+      { $match: matchStage },
+      { $group: { _id: '$status', count: { $sum: 1 }, revenue: { $sum: '$totalPrice' } } }
+    ]);
+
+    const topProducts = await Order.aggregate([
+      { $match: matchStage },
+      { $unwind: '$items' },
+      { $group: { _id: '$items.name', totalQty: { $sum: '$items.quantity' }, totalRevenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } } } },
+      { $sort: { totalQty: -1 } },
+      { $limit: 10 }
+    ]);
+
+    const categoryRevenue = await Order.aggregate([
+      { $match: matchStage },
+      { $unwind: '$items' },
+      { $lookup: { from: 'products', localField: 'items.product', foreignField: '_id', as: 'productInfo' } },
+      { $unwind: { path: '$productInfo', preserveNullAndEmptyArrays: true } },
+      { $group: { _id: '$productInfo.category', revenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } } } },
+      { $sort: { revenue: -1 } }
+    ]);
+
+    res.json({ revenueByDay, statusBreakdown, topProducts, categoryRevenue });
+  } catch (error) {
+    console.error('Analytics error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });

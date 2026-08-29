@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import type { Order } from '../types';
+import { colors, radii, fontSize, fontWeight, shadow, badgeColor, badgeBase, transition } from '../theme';
 
 const STATUSES = ['', 'unpaid', 'processing', 'shipped', 'delivered'];
 
@@ -61,20 +62,24 @@ export default function Orders() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td style={{ ...styles.td, textAlign: 'center', color: '#aaa' }} colSpan={6}>Loading...</td></tr>
+              <tr><td style={{ ...styles.td, textAlign: 'center', color: colors.textMuted }} colSpan={6}>Loading...</td></tr>
             ) : orders.length === 0 ? (
-              <tr><td style={{ ...styles.td, textAlign: 'center', color: '#aaa' }} colSpan={6}>No orders found</td></tr>
+              <tr><td style={{ ...styles.td, textAlign: 'center', color: colors.textMuted }} colSpan={6}>No orders found</td></tr>
             ) : orders.map((o) => {
               const user = o.user as any;
               const name = user?.firstName ? `${user.firstName} ${user.lastName}` : 'Unknown';
+              const bc = badgeColor(o.status as any);
               return (
-                <tr key={o._id} style={styles.tr} onClick={() => navigate(`/orders/${o._id}`)}>
-                  <td style={styles.td}><code style={{ fontSize: 12 }}>{o._id.slice(-8)}</code></td>
-                  <td style={styles.td}>{name}</td>
+                <tr key={o._id} style={styles.tr} onClick={() => navigate(`/orders/${o._id}`)}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.hover; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                >
+                  <td style={styles.td}><code style={styles.orderId}>{o._id.slice(-8)}</code></td>
+                  <td style={styles.td}><span style={styles.customerName}>{name}</span></td>
                   <td style={styles.td}>{o.items.length} item(s)</td>
                   <td style={styles.td}>₱{o.totalPrice.toLocaleString()}</td>
                   <td style={styles.td}>
-                    <span style={{ ...styles.badge, ...badgeColor(o.status) }}>{o.status}</span>
+                    <span style={{ ...badgeBase, backgroundColor: bc.bg, color: bc.color }}>{o.status}</span>
                   </td>
                   <td style={styles.td}>{new Date(o.createdAt).toLocaleDateString()}</td>
                 </tr>
@@ -86,39 +91,118 @@ export default function Orders() {
 
       {pages > 1 && (
         <div style={styles.pagination}>
-          <button disabled={page <= 1} onClick={() => { setPage(page - 1); load(page - 1); }} style={styles.pageBtn}>Prev</button>
+          <button disabled={page <= 1} onClick={() => { setPage(page - 1); load(page - 1); }}
+            style={{ ...styles.pageBtn, ...(page <= 1 ? styles.pageBtnDisabled : {}) }}>Prev</button>
           <span style={styles.pageInfo}>Page {page} of {pages}</span>
-          <button disabled={page >= pages} onClick={() => { setPage(page + 1); load(page + 1); }} style={styles.pageBtn}>Next</button>
+          <button disabled={page >= pages} onClick={() => { setPage(page + 1); load(page + 1); }}
+            style={{ ...styles.pageBtn, ...(page >= pages ? styles.pageBtnDisabled : {}) }}>Next</button>
         </div>
       )}
     </div>
   );
 }
 
-function badgeColor(status: string): React.CSSProperties {
-  const colors: Record<string, { background: string; color: string }> = {
-    unpaid: { background: '#fef3c7', color: '#92400e' },
-    processing: { background: '#dbeafe', color: '#1e40af' },
-    shipped: { background: '#d1fae5', color: '#065f46' },
-    delivered: { background: '#ede9fe', color: '#5b21b6' },
-  };
-  const c = colors[status] || { background: '#f3f4f6', color: '#374151' };
-  return { backgroundColor: c.background, color: c.color, padding: '3px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600 };
-}
-
 const styles: Record<string, React.CSSProperties> = {
-  topRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  heading: { fontSize: 22, fontWeight: 800, margin: 0 },
-  filterRow: { display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' },
-  filterBtn: { padding: '7px 16px', borderRadius: 20, border: '1px solid #ddd', backgroundColor: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 500, textTransform: 'capitalize' },
-  filterActive: { backgroundColor: '#6C3BC6', color: '#fff', borderColor: '#6C3BC6' },
-  tableCard: { backgroundColor: '#fff', borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' },
-  table: { width: '100%', borderCollapse: 'collapse' },
-  th: { textAlign: 'left', padding: '10px 16px', fontSize: 12, fontWeight: 600, color: '#888', borderBottom: '1px solid #eee', textTransform: 'uppercase' },
-  tr: { borderBottom: '1px solid #f5f5f5', cursor: 'pointer' },
-  td: { padding: '12px 16px', fontSize: 14 },
-  badge: { padding: '3px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600, textTransform: 'capitalize' },
-  pagination: { display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, marginTop: 16 },
-  pageBtn: { padding: '8px 16px', borderRadius: 8, border: '1px solid #ddd', backgroundColor: '#fff', cursor: 'pointer', fontSize: 13 },
-  pageInfo: { fontSize: 13, color: '#888' },
+  topRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  heading: {
+    fontSize: fontSize.heading,
+    fontWeight: fontWeight.extrabold,
+    margin: 0,
+    color: colors.text,
+  },
+  filterRow: {
+    display: 'flex',
+    gap: 8,
+    marginBottom: 20,
+    flexWrap: 'wrap',
+  },
+  filterBtn: {
+    padding: '7px 18px',
+    borderRadius: radii.full,
+    border: `1px solid ${colors.border}`,
+    backgroundColor: colors.white,
+    cursor: 'pointer',
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.medium,
+    textTransform: 'capitalize',
+    color: colors.textSecondary,
+    transition: `all ${transition.fast}`,
+  },
+  filterActive: {
+    backgroundColor: colors.accent,
+    color: colors.white,
+    borderColor: colors.accent,
+  },
+  tableCard: {
+    backgroundColor: colors.white,
+    borderRadius: radii.xl,
+    overflow: 'hidden',
+    boxShadow: shadow.card,
+  },
+  table: {
+    width: '100%',
+    borderCollapse: 'collapse',
+  },
+  th: {
+    textAlign: 'left',
+    padding: '12px 20px',
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
+    borderBottom: `1px solid ${colors.border}`,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  tr: {
+    borderBottom: `1px solid ${colors.borderLight}`,
+    cursor: 'pointer',
+    transition: `background-color ${transition.fast}`,
+  },
+  td: {
+    padding: '14px 20px',
+    fontSize: fontSize.md,
+    color: colors.text,
+  },
+  orderId: {
+    fontSize: fontSize.sm,
+    fontFamily: 'monospace',
+    color: colors.textSecondary,
+    backgroundColor: colors.hover,
+    padding: '2px 8px',
+    borderRadius: radii.sm,
+  },
+  customerName: {
+    fontWeight: fontWeight.medium,
+  },
+  pagination: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+    marginTop: 20,
+  },
+  pageBtn: {
+    padding: '8px 20px',
+    borderRadius: radii.md,
+    border: `1px solid ${colors.border}`,
+    backgroundColor: colors.white,
+    cursor: 'pointer',
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.medium,
+    color: colors.text,
+    transition: `all ${transition.fast}`,
+  },
+  pageBtnDisabled: {
+    opacity: 0.4,
+    cursor: 'not-allowed',
+  },
+  pageInfo: {
+    fontSize: fontSize.base,
+    color: colors.textMuted,
+  },
 };

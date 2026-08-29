@@ -9,6 +9,8 @@ const productRoutes = require('./routes/products');
 const orderRoutes = require('./routes/orders');
 const favoriteRoutes = require('./routes/favorites');
 const uploadRoutes = require('./routes/upload');
+const notificationRoutes = require('./routes/notifications');
+const settingsRoutes = require('./routes/settings');
 
 const app = express();
 
@@ -28,6 +30,8 @@ app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/favorites', favoriteRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/settings', settingsRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

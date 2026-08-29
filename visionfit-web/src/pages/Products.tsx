@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import type { Product } from '../types';
+import { colors, radii, fontSize, fontWeight, shadow, transition, badgeBase } from '../theme';
 
 const IMG_BASE = '';
 
@@ -65,11 +66,14 @@ export default function Products() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td style={{ ...styles.td, textAlign: 'center', color: '#aaa' }} colSpan={7}>Loading...</td></tr>
+              <tr><td style={{ ...styles.td, textAlign: 'center', color: colors.textMuted }} colSpan={7}>Loading...</td></tr>
             ) : products.length === 0 ? (
-              <tr><td style={{ ...styles.td, textAlign: 'center', color: '#aaa' }} colSpan={7}>No products found</td></tr>
+              <tr><td style={{ ...styles.td, textAlign: 'center', color: colors.textMuted }} colSpan={7}>No products found</td></tr>
             ) : products.map((p) => (
-              <tr key={p._id} style={styles.tr}>
+              <tr key={p._id} style={styles.tr}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.hover; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+              >
                 <td style={styles.td}>
                   {p.image ? (
                     <img src={`${IMG_BASE}${p.image}`} alt={p.name} style={styles.thumb} />
@@ -77,12 +81,18 @@ export default function Products() {
                     <div style={styles.noImg}>No img</div>
                   )}
                 </td>
-                <td style={styles.td}><strong>{p.name}</strong></td>
+                <td style={styles.td}><span style={styles.productName}>{p.name}</span></td>
                 <td style={styles.td}>₱{p.price.toLocaleString()}</td>
-                <td style={styles.td}>{p.category}</td>
+                <td style={styles.td}>
+                  <span style={styles.categoryPill}>{p.category}</span>
+                </td>
                 <td style={styles.td}>{p.frameShape}</td>
                 <td style={styles.td}>
-                  <span style={{ ...styles.badge, backgroundColor: p.inStock ? '#d1fae5' : '#fee2e2', color: p.inStock ? '#065f46' : '#991b1b' }}>
+                  <span style={{
+                    ...badgeBase,
+                    backgroundColor: p.inStock ? colors.greenLight : colors.redLight,
+                    color: p.inStock ? colors.greenDark : colors.redDark,
+                  }}>
                     {p.inStock ? 'In Stock' : 'Out of Stock'}
                   </span>
                 </td>
@@ -102,21 +112,136 @@ export default function Products() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  topRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  heading: { fontSize: 22, fontWeight: 800, margin: 0 },
-  addBtn: { padding: '10px 20px', borderRadius: 10, border: 'none', backgroundColor: '#6C3BC6', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' },
-  searchRow: { display: 'flex', gap: 8, marginBottom: 16 },
-  searchInput: { flex: 1, height: 42, border: '1px solid #ddd', borderRadius: 10, padding: '0 14px', fontSize: 14, outline: 'none' },
-  searchBtn: { padding: '0 20px', borderRadius: 10, border: '1px solid #ddd', backgroundColor: '#fff', cursor: 'pointer', fontWeight: 600 },
-  tableCard: { backgroundColor: '#fff', borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' },
-  table: { width: '100%', borderCollapse: 'collapse' },
-  th: { textAlign: 'left', padding: '10px 16px', fontSize: 12, fontWeight: 600, color: '#888', borderBottom: '1px solid #eee', textTransform: 'uppercase' },
-  tr: { borderBottom: '1px solid #f5f5f5' },
-  td: { padding: '12px 16px', fontSize: 14, verticalAlign: 'middle' },
-  thumb: { width: 48, height: 48, borderRadius: 8, objectFit: 'cover' },
-  noImg: { width: 48, height: 48, borderRadius: 8, backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#aaa' },
-  badge: { padding: '3px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600 },
-  actions: { display: 'flex', gap: 6 },
-  editBtn: { padding: '6px 12px', borderRadius: 6, border: '1px solid #ddd', backgroundColor: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600 },
-  deleteBtn: { padding: '6px 12px', borderRadius: 6, border: '1px solid #fecaca', backgroundColor: '#fef2f2', color: '#dc2626', cursor: 'pointer', fontSize: 12, fontWeight: 600 },
+  topRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  heading: {
+    fontSize: fontSize.heading,
+    fontWeight: fontWeight.extrabold,
+    margin: 0,
+    color: colors.text,
+  },
+  addBtn: {
+    padding: '10px 22px',
+    borderRadius: radii.lg,
+    border: 'none',
+    backgroundColor: colors.accent,
+    color: colors.white,
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.bold,
+    cursor: 'pointer',
+  },
+  searchRow: {
+    display: 'flex',
+    gap: 10,
+    marginBottom: 20,
+  },
+  searchInput: {
+    flex: 1,
+    height: 42,
+    border: `1px solid ${colors.border}`,
+    borderRadius: radii.lg,
+    padding: '0 16px',
+    fontSize: fontSize.md,
+    outline: 'none',
+    backgroundColor: colors.white,
+  },
+  searchBtn: {
+    padding: '0 24px',
+    borderRadius: radii.lg,
+    border: 'none',
+    backgroundColor: colors.primary,
+    color: colors.white,
+    cursor: 'pointer',
+    fontWeight: fontWeight.semibold,
+    fontSize: fontSize.md,
+  },
+  tableCard: {
+    backgroundColor: colors.white,
+    borderRadius: radii.xl,
+    overflow: 'hidden',
+    boxShadow: shadow.card,
+  },
+  table: {
+    width: '100%',
+    borderCollapse: 'collapse',
+  },
+  th: {
+    textAlign: 'left',
+    padding: '12px 20px',
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
+    borderBottom: `1px solid ${colors.border}`,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  tr: {
+    borderBottom: `1px solid ${colors.borderLight}`,
+    transition: `background-color ${transition.fast}`,
+  },
+  td: {
+    padding: '14px 20px',
+    fontSize: fontSize.md,
+    verticalAlign: 'middle',
+    color: colors.text,
+  },
+  productName: {
+    fontWeight: fontWeight.semibold,
+  },
+  categoryPill: {
+    padding: '2px 10px',
+    borderRadius: radii.full,
+    backgroundColor: colors.hover,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+    color: colors.textSecondary,
+    textTransform: 'capitalize',
+  },
+  thumb: {
+    width: 48,
+    height: 48,
+    borderRadius: radii.md,
+    objectFit: 'cover',
+  },
+  noImg: {
+    width: 48,
+    height: 48,
+    borderRadius: radii.md,
+    backgroundColor: colors.hover,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+  },
+  actions: {
+    display: 'flex',
+    gap: 8,
+  },
+  editBtn: {
+    padding: '6px 14px',
+    borderRadius: radii.sm,
+    border: `1px solid ${colors.border}`,
+    backgroundColor: colors.white,
+    cursor: 'pointer',
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+    transition: `background-color ${transition.fast}`,
+  },
+  deleteBtn: {
+    padding: '6px 14px',
+    borderRadius: radii.sm,
+    border: `1px solid ${colors.redLight}`,
+    backgroundColor: colors.redLight,
+    color: colors.redDark,
+    cursor: 'pointer',
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    transition: `background-color ${transition.fast}`,
+  },
 };

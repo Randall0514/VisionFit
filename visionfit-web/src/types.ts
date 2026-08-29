@@ -17,6 +17,8 @@ export interface Product {
   category: string;
   frameShape: string;
   colors: { name: string; hex: string }[];
+  stock: { color: string; quantity: number }[];
+  lowStockThreshold: number;
   compatibleLenses: string[];
   faceShapes: string[];
   image: string;

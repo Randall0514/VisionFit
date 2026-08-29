@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api';
 import type { Order } from '../types';
+import { colors, radii, fontSize, fontWeight, shadow, badgeColor, badgeBase, transition } from '../theme';
 
 const STATUSES = ['unpaid', 'processing', 'shipped', 'delivered'];
 
@@ -31,11 +32,12 @@ export default function OrderDetail() {
     }
   };
 
-  if (loading) return <div style={{ padding: 20, color: '#888' }}>Loading order...</div>;
-  if (!order) return <div style={{ padding: 20, color: '#d33' }}>Order not found</div>;
+  if (loading) return <div style={styles.loading}>Loading order...</div>;
+  if (!order) return <div style={styles.error}>Order not found</div>;
 
   const user = order.user as any;
   const customerName = user?.firstName ? `${user.firstName} ${user.lastName}` : 'Unknown';
+  const bc = badgeColor(order.status as any);
 
   return (
     <div>
@@ -56,8 +58,8 @@ export default function OrderDetail() {
         </div>
         <div style={styles.card}>
           <h3 style={styles.cardTitle}>Status</h3>
-          <div style={{ ...styles.badge, ...badgeColor(order.status) }}>{order.status}</div>
-          <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          <span style={{ ...badgeBase, backgroundColor: bc.bg, color: bc.color, fontSize: fontSize.md, padding: '5px 14px' }}>{order.status}</span>
+          <div style={styles.statusRow}>
             {STATUSES.map((s) => (
               <button key={s} onClick={() => handleStatus(s)}
                 disabled={updating || s === order.status}
@@ -83,8 +85,11 @@ export default function OrderDetail() {
           </thead>
           <tbody>
             {order.items.map((item, i) => (
-              <tr key={i} style={styles.tr}>
-                <td style={styles.td}>{item.name}</td>
+              <tr key={i} style={styles.tr}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.hover; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+              >
+                <td style={styles.td}><span style={{ fontWeight: fontWeight.medium }}>{item.name}</span></td>
                 <td style={styles.td}>{item.color}</td>
                 <td style={styles.td}>{item.lensType || '-'}</td>
                 <td style={styles.td}>{item.quantity}</td>
@@ -96,38 +101,130 @@ export default function OrderDetail() {
         <div style={styles.total}>Total: ₱{order.totalPrice.toLocaleString()}</div>
       </div>
 
-      <div style={{ marginTop: 8, fontSize: 12, color: '#aaa' }}>
+      <div style={styles.timestamp}>
         Created: {new Date(order.createdAt).toLocaleString()}
       </div>
     </div>
   );
 }
 
-function badgeColor(status: string): React.CSSProperties {
-  const colors: Record<string, { background: string; color: string }> = {
-    unpaid: { background: '#fef3c7', color: '#92400e' },
-    processing: { background: '#dbeafe', color: '#1e40af' },
-    shipped: { background: '#d1fae5', color: '#065f46' },
-    delivered: { background: '#ede9fe', color: '#5b21b6' },
-  };
-  const c = colors[status] || { background: '#f3f4f6', color: '#374151' };
-  return { backgroundColor: c.background, color: c.color, padding: '4px 14px', borderRadius: 6, fontSize: 14, fontWeight: 600, display: 'inline-block' };
-}
-
 const styles: Record<string, React.CSSProperties> = {
-  backBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#6C3BC6', fontWeight: 600, padding: 0, marginBottom: 12 },
-  heading: { fontSize: 22, fontWeight: 800, marginBottom: 20 },
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 16 },
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' },
-  cardTitle: { fontSize: 13, fontWeight: 600, color: '#888', textTransform: 'uppercase', marginBottom: 10, marginTop: 0 },
-  info: { fontSize: 16, fontWeight: 700, margin: 0 },
-  infoSmall: { fontSize: 13, color: '#666', margin: '4px 0 0' },
-  badge: { textTransform: 'capitalize' },
-  statusBtn: { padding: '6px 14px', borderRadius: 6, border: '1px solid #ddd', backgroundColor: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600, textTransform: 'capitalize' },
-  statusBtnActive: { backgroundColor: '#6C3BC6', color: '#fff', borderColor: '#6C3BC6' },
-  table: { width: '100%', borderCollapse: 'collapse' },
-  th: { textAlign: 'left', padding: '10px 16px', fontSize: 12, fontWeight: 600, color: '#888', borderBottom: '1px solid #eee', textTransform: 'uppercase' },
-  tr: { borderBottom: '1px solid #f5f5f5' },
-  td: { padding: '12px 16px', fontSize: 14 },
-  total: { textAlign: 'right', padding: '12px 16px', fontSize: 16, fontWeight: 800, borderTop: '1px solid #eee' },
+  backBtn: {
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    fontSize: fontSize.md,
+    color: colors.accent,
+    fontWeight: fontWeight.semibold,
+    padding: 0,
+    marginBottom: 12,
+    transition: `color ${transition.fast}`,
+  },
+  heading: {
+    fontSize: fontSize.heading,
+    fontWeight: fontWeight.extrabold,
+    marginBottom: 24,
+    color: colors.text,
+  },
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+    gap: 16,
+    marginBottom: 16,
+  },
+  card: {
+    backgroundColor: colors.white,
+    borderRadius: radii.xl,
+    padding: 24,
+    boxShadow: shadow.card,
+  },
+  cardTitle: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    marginBottom: 12,
+    marginTop: 0,
+    letterSpacing: 0.3,
+  },
+  info: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+    margin: 0,
+    color: colors.text,
+  },
+  infoSmall: {
+    fontSize: fontSize.base,
+    color: colors.textSecondary,
+    margin: '4px 0 0',
+  },
+  statusRow: {
+    marginTop: 12,
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  statusBtn: {
+    padding: '7px 16px',
+    borderRadius: radii.sm,
+    border: `1px solid ${colors.border}`,
+    backgroundColor: colors.white,
+    cursor: 'pointer',
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    textTransform: 'capitalize',
+    color: colors.textSecondary,
+    transition: `all ${transition.fast}`,
+  },
+  statusBtnActive: {
+    backgroundColor: colors.accent,
+    color: colors.white,
+    borderColor: colors.accent,
+  },
+  table: {
+    width: '100%',
+    borderCollapse: 'collapse',
+  },
+  th: {
+    textAlign: 'left',
+    padding: '12px 20px',
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
+    borderBottom: `1px solid ${colors.border}`,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  tr: {
+    borderBottom: `1px solid ${colors.borderLight}`,
+    transition: `background-color ${transition.fast}`,
+  },
+  td: {
+    padding: '14px 20px',
+    fontSize: fontSize.md,
+    color: colors.text,
+  },
+  total: {
+    textAlign: 'right',
+    padding: '16px 20px',
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.extrabold,
+    borderTop: `1px solid ${colors.border}`,
+    color: colors.text,
+  },
+  timestamp: {
+    marginTop: 12,
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+  },
+  loading: {
+    padding: 24,
+    color: colors.textMuted,
+    fontSize: fontSize.md,
+  },
+  error: {
+    padding: 24,
+    color: colors.red,
+    fontSize: fontSize.md,
+  },
 };

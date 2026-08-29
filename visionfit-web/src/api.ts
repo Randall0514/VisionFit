@@ -15,7 +15,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
 
   const res = await fetch(`${API_URL}${path}`, { ...options, headers });
-  const data = await res.json();
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : {};
   if (!res.ok) throw new Error(data.error || 'Request failed');
   return data as T;
 }
@@ -53,7 +54,8 @@ const api = {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: formData,
     });
-    const data = await res.json();
+    const text = await res.text();
+    const data = text ? JSON.parse(text) : {};
     if (!res.ok) throw new Error(data.error || 'Upload failed');
     return data;
   },
@@ -67,6 +69,36 @@ const api = {
 
   updateOrderStatus: (id: string, status: string) =>
     request<any>(`/orders/admin/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) }),
+
+  updateStock: (id: string, data: { stock: { color: string; quantity: number }[]; lowStockThreshold?: number }) =>
+    request<any>(`/products/${id}/stock`, { method: 'PATCH', body: JSON.stringify(data) }),
+
+  getLowStock: (threshold?: number) =>
+    request<any[]>(`/products/admin/low-stock${threshold ? `?threshold=${threshold}` : ''}`),
+
+  getAnalytics: (from?: string, to?: string) => {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    const qs = params.toString();
+    return request<any>(`/orders/admin/analytics${qs ? `?${qs}` : ''}`);
+  },
+
+  changePassword: (data: { currentPassword: string; newPassword: string }) =>
+    request<{ message: string }>('/auth/password', { method: 'PUT', body: JSON.stringify(data) }),
+
+  getNotifications: () => request<any[]>('/notifications'),
+
+  markNotificationRead: (id: string) =>
+    request<any>(`/notifications/${id}/read`, { method: 'PUT' }),
+
+  deleteNotification: (id: string) =>
+    request<{ message: string }>(`/notifications/${id}`, { method: 'DELETE' }),
+
+  getSettings: () => request<any>('/settings'),
+
+  updateSettings: (data: any) =>
+    request<any>('/settings', { method: 'PUT', body: JSON.stringify(data) }),
 };
 
 export default api;

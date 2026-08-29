@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../api';
+import { colors, radii, fontSize, fontWeight, shadow, transition, inputBase, textareaBase, labelBase } from '../theme';
 
 const CATEGORIES = ['eyeglass', 'sunglasses', 'blue light', 'sports', 'transitions'];
 const SHAPES = ['square', 'rectangle', 'round', 'cat-eye', 'browline', 'aviator'];
@@ -16,6 +17,8 @@ interface FormData {
   category: string;
   frameShape: string;
   colors: { name: string; hex: string }[];
+  stock: { color: string; quantity: number }[];
+  lowStockThreshold: string;
   compatibleLenses: string[];
   faceShapes: string[];
   image: string;
@@ -26,6 +29,8 @@ const empty: FormData = {
   name: '', price: '', description: '',
   category: 'eyeglass', frameShape: 'round',
   colors: [{ name: 'Black', hex: '#000000' }],
+  stock: [{ color: 'Black', quantity: 0 }],
+  lowStockThreshold: '5',
   compatibleLenses: [], faceShapes: [],
   image: '', inStock: true,
 };
@@ -39,14 +44,19 @@ export default function ProductForm() {
   const [preview, setPreview] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (isEdit && id) {
       api.getProduct(id).then((p) => {
+        const colors = p.colors.length ? p.colors : [{ name: 'Black', hex: '#000000' }];
+        const stock = p.stock?.length ? p.stock : colors.map((c: any) => ({ color: c.name, quantity: 0 }));
         setForm({
           name: p.name, price: String(p.price), description: p.description,
           category: p.category, frameShape: p.frameShape,
-          colors: p.colors.length ? p.colors : [{ name: 'Black', hex: '#000000' }],
+          colors,
+          stock,
+          lowStockThreshold: String(p.lowStockThreshold ?? 5),
           compatibleLenses: p.compatibleLenses, faceShapes: p.faceShapes,
           image: p.image, inStock: p.inStock,
         });
@@ -55,17 +65,21 @@ export default function ProductForm() {
     }
   }, [id, isEdit]);
 
-  const set = <K extends keyof FormData>(key: K, val: FormData[K]) => setForm((f) => ({ ...f, [key]: val }));
+  const set = <K extends keyof FormData>(key: K, val: FormData[K]) => {
+    setForm((f) => ({ ...f, [key]: val }));
+    if (fieldErrors[key]) setFieldErrors((e) => { const n = { ...e }; delete n[key]; return n; });
+  };
 
   const toggleArray = (key: 'compatibleLenses' | 'faceShapes', val: string) => {
     setForm((f) => {
       const arr = f[key];
       return { ...f, [key]: arr.includes(val) ? arr.filter((v) => v !== val) : [...arr, val] };
     });
+    if (fieldErrors[key]) setFieldErrors((e) => { const n = { ...e }; delete n[key]; return n; });
   };
 
-  const addColor = () => setForm((f) => ({ ...f, colors: [...f.colors, { name: '', hex: '#000000' }] }));
-  const removeColor = (i: number) => setForm((f) => ({ ...f, colors: f.colors.filter((_, idx) => idx !== i) }));
+  const addColor = () => setForm((f) => ({ ...f, colors: [...f.colors, { name: '', hex: '#000000' }], stock: [...f.stock, { color: '', quantity: 0 }] }));
+  const removeColor = (i: number) => setForm((f) => ({ ...f, colors: f.colors.filter((_, idx) => idx !== i), stock: f.stock.filter((_, idx) => idx !== i) }));
   const updateColor = (i: number, field: 'name' | 'hex', val: string) => {
     setForm((f) => ({ ...f, colors: f.colors.map((c, idx) => idx === i ? { ...c, [field]: val } : c) }));
   };
@@ -75,12 +89,21 @@ export default function ProductForm() {
     if (file) {
       setImageFile(file);
       setPreview(URL.createObjectURL(file));
+      if (fieldErrors.image) setFieldErrors((prev) => { const n = { ...prev }; delete n.image; return n; });
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    const errs: Record<string, string> = {};
+    if (!form.description.trim()) errs.description = 'Description is required';
+    if (form.compatibleLenses.length === 0) errs.compatibleLenses = 'Select at least one compatible lens';
+    if (form.faceShapes.length === 0) errs.faceShapes = 'Select at least one face shape';
+    if (!imageFile && !form.image) errs.image = 'Product image is required';
+    setFieldErrors(errs);
+    if (Object.keys(errs).length > 0) return;
+
     setSaving(true);
     try {
       let imageUrl = form.image;
@@ -92,6 +115,7 @@ export default function ProductForm() {
       const payload = {
         ...form,
         price: Number(form.price),
+        lowStockThreshold: Number(form.lowStockThreshold),
         image: imageUrl,
       };
 
@@ -117,30 +141,31 @@ export default function ProductForm() {
 
         <div style={styles.row}>
           <div style={styles.field}>
-            <label style={styles.label}>Product Name *</label>
-            <input style={styles.input} value={form.name} onChange={(e) => set('name', e.target.value)} required />
+            <label style={styles.label}>Product Name <span style={styles.required}>*</span></label>
+            <input style={inputBase} value={form.name} onChange={(e) => set('name', e.target.value)} required />
           </div>
           <div style={styles.field}>
-            <label style={styles.label}>Price (₱) *</label>
-            <input style={styles.input} type="number" value={form.price} onChange={(e) => set('price', e.target.value)} required />
+            <label style={styles.label}>Price (₱) <span style={styles.required}>*</span></label>
+            <input style={inputBase} type="number" value={form.price} onChange={(e) => set('price', e.target.value)} required />
           </div>
         </div>
 
         <div style={styles.field}>
-          <label style={styles.label}>Description</label>
-          <textarea style={styles.textarea} rows={3} value={form.description} onChange={(e) => set('description', e.target.value)} />
+          <label style={styles.label}>Description <span style={styles.required}>*</span></label>
+          <textarea style={textareaBase} rows={3} value={form.description} onChange={(e) => set('description', e.target.value)} required />
+          {fieldErrors.description && <div style={styles.fieldError}>{fieldErrors.description}</div>}
         </div>
 
         <div style={styles.row}>
           <div style={styles.field}>
-            <label style={styles.label}>Category *</label>
-            <select style={styles.input} value={form.category} onChange={(e) => set('category', e.target.value)}>
+            <label style={styles.label}>Category <span style={styles.required}>*</span></label>
+            <select style={inputBase} value={form.category} onChange={(e) => set('category', e.target.value)}>
               {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
           <div style={styles.field}>
-            <label style={styles.label}>Frame Shape *</label>
-            <select style={styles.input} value={form.frameShape} onChange={(e) => set('frameShape', e.target.value)}>
+            <label style={styles.label}>Frame Shape <span style={styles.required}>*</span></label>
+            <select style={inputBase} value={form.frameShape} onChange={(e) => set('frameShape', e.target.value)}>
               {SHAPES.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
@@ -150,7 +175,7 @@ export default function ProductForm() {
           <label style={styles.label}>Colors</label>
           {form.colors.map((c, i) => (
             <div key={i} style={styles.colorRow}>
-              <input style={{ ...styles.input, flex: 1 }} placeholder="Color name" value={c.name} onChange={(e) => updateColor(i, 'name', e.target.value)} />
+              <input style={{ ...inputBase, flex: 1 }} placeholder="Color name" value={c.name} onChange={(e) => updateColor(i, 'name', e.target.value)} />
               <input type="color" value={c.hex} onChange={(e) => updateColor(i, 'hex', e.target.value)} style={styles.colorPicker} />
               {form.colors.length > 1 && (
                 <button type="button" onClick={() => removeColor(i)} style={styles.removeBtn}>✕</button>
@@ -161,7 +186,42 @@ export default function ProductForm() {
         </div>
 
         <div style={styles.field}>
-          <label style={styles.label}>Compatible Lenses</label>
+          <label style={styles.label}>Stock per Color</label>
+          <div style={styles.stockGrid}>
+            {form.colors.map((c, i) => (
+              <div key={i} style={styles.stockRow}>
+                <span style={{ ...styles.colorDot, backgroundColor: c.hex }} />
+                <span style={styles.colorLabel}>{c.name || `Color ${i + 1}`}</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={form.stock[i]?.quantity ?? 0}
+                  onChange={(e) => {
+                    const stock = [...form.stock];
+                    while (stock.length <= i) stock.push({ color: '', quantity: 0 });
+                    stock[i] = { color: c.name, quantity: Number(e.target.value) };
+                    set('stock', stock);
+                  }}
+                  style={styles.stockInput}
+                />
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <label style={labelBase}>Low Stock Threshold</label>
+            <input
+              type="number"
+              min={0}
+              value={form.lowStockThreshold}
+              onChange={(e) => set('lowStockThreshold', e.target.value)}
+              style={{ ...styles.stockInput, width: 60 }}
+            />
+          </div>
+        </div>
+
+        <div style={styles.field}>
+          <label style={styles.label}>Compatible Lenses <span style={styles.required}>*</span></label>
+          {fieldErrors.compatibleLenses && <div style={styles.fieldError}>{fieldErrors.compatibleLenses}</div>}
           <div style={styles.chipRow}>
             {LENSES.map((l) => (
               <button key={l} type="button" onClick={() => toggleArray('compatibleLenses', l)}
@@ -173,7 +233,8 @@ export default function ProductForm() {
         </div>
 
         <div style={styles.field}>
-          <label style={styles.label}>Face Shapes</label>
+          <label style={styles.label}>Face Shapes <span style={styles.required}>*</span></label>
+          {fieldErrors.faceShapes && <div style={styles.fieldError}>{fieldErrors.faceShapes}</div>}
           <div style={styles.chipRow}>
             {FACE_SHAPES.map((f) => (
               <button key={f} type="button" onClick={() => toggleArray('faceShapes', f)}
@@ -185,21 +246,22 @@ export default function ProductForm() {
         </div>
 
         <div style={styles.field}>
-          <label style={styles.label}>Product Image</label>
+          <label style={styles.label}>Product Image <span style={styles.required}>*</span></label>
+          {fieldErrors.image && <div style={styles.fieldError}>{fieldErrors.image}</div>}
           <input type="file" accept="image/*" onChange={handleImage} style={styles.fileInput} />
           {preview && <img src={preview} alt="Preview" style={styles.preview} />}
         </div>
 
         <div style={styles.field}>
-          <label style={styles.label}>
-            <input type="checkbox" checked={form.inStock} onChange={(e) => set('inStock', e.target.checked)} style={{ marginRight: 8 }} />
+          <label style={styles.checkboxLabel}>
+            <input type="checkbox" checked={form.inStock} onChange={(e) => set('inStock', e.target.checked)} style={styles.checkbox} />
             In Stock
           </label>
         </div>
 
         <div style={styles.buttonRow}>
           <button type="button" onClick={() => navigate('/products')} style={styles.cancelBtn}>Cancel</button>
-          <button type="submit" disabled={saving} style={styles.saveBtn}>
+          <button type="submit" disabled={saving} style={{ ...styles.saveBtn, ...(saving ? { opacity: 0.7, cursor: 'not-allowed' } : {}) }}>
             {saving ? 'Saving...' : isEdit ? 'Update Product' : 'Create Product'}
           </button>
         </div>
@@ -209,24 +271,190 @@ export default function ProductForm() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  heading: { fontSize: 22, fontWeight: 800, marginBottom: 20 },
-  form: { backgroundColor: '#fff', borderRadius: 12, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.08)', maxWidth: 700 },
-  row: { display: 'flex', gap: 16 },
-  field: { marginBottom: 16, flex: 1 },
-  label: { display: 'block', fontSize: 13, fontWeight: 600, color: '#555', marginBottom: 6 },
-  input: { width: '100%', height: 42, border: '1px solid #ddd', borderRadius: 8, padding: '0 12px', fontSize: 14, outline: 'none', boxSizing: 'border-box', backgroundColor: '#fafafa' },
-  textarea: { width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '10px 12px', fontSize: 14, outline: 'none', resize: 'vertical', boxSizing: 'border-box', backgroundColor: '#fafafa' },
-  colorRow: { display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 },
-  colorPicker: { width: 42, height: 42, border: '1px solid #ddd', borderRadius: 8, cursor: 'pointer', padding: 2 },
-  removeBtn: { width: 32, height: 32, borderRadius: 6, border: '1px solid #fecaca', backgroundColor: '#fef2f2', color: '#dc2626', cursor: 'pointer', fontSize: 14 },
-  addColorBtn: { padding: '6px 12px', borderRadius: 6, border: '1px dashed #ccc', backgroundColor: 'transparent', cursor: 'pointer', fontSize: 13, color: '#666' },
-  chipRow: { display: 'flex', flexWrap: 'wrap', gap: 6 },
-  chip: { padding: '6px 14px', borderRadius: 20, border: '1px solid #ddd', backgroundColor: '#fff', cursor: 'pointer', fontSize: 13 },
-  chipActive: { backgroundColor: '#6C3BC6', color: '#fff', borderColor: '#6C3BC6' },
-  fileInput: { marginBottom: 8 },
-  preview: { width: 120, height: 120, objectFit: 'cover', borderRadius: 10, border: '1px solid #eee' },
-  buttonRow: { display: 'flex', gap: 10, marginTop: 8 },
-  cancelBtn: { padding: '10px 24px', borderRadius: 10, border: '1px solid #ddd', backgroundColor: '#fff', cursor: 'pointer', fontSize: 14, fontWeight: 600 },
-  saveBtn: { padding: '10px 24px', borderRadius: 10, border: 'none', backgroundColor: '#6C3BC6', color: '#fff', cursor: 'pointer', fontSize: 14, fontWeight: 700 },
-  error: { backgroundColor: '#fef2f2', color: '#dc2626', padding: '10px 14px', borderRadius: 8, fontSize: 13, marginBottom: 12 },
+  heading: {
+    fontSize: fontSize.heading,
+    fontWeight: fontWeight.extrabold,
+    marginBottom: 24,
+    color: colors.text,
+  },
+  form: {
+    backgroundColor: colors.white,
+    borderRadius: radii.xl,
+    padding: 28,
+    boxShadow: shadow.card,
+    maxWidth: 720,
+  },
+  row: {
+    display: 'flex',
+    gap: 16,
+  },
+  field: {
+    marginBottom: 20,
+    flex: 1,
+  },
+  label: {
+    ...labelBase,
+  },
+  required: {
+    color: colors.accent,
+  },
+  colorRow: {
+    display: 'flex',
+    gap: 10,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  colorPicker: {
+    width: 44,
+    height: 44,
+    border: `1px solid ${colors.border}`,
+    borderRadius: radii.md,
+    cursor: 'pointer',
+    padding: 2,
+  },
+  removeBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: radii.sm,
+    border: `1px solid ${colors.redLight}`,
+    backgroundColor: colors.redLight,
+    color: colors.redDark,
+    cursor: 'pointer',
+    fontSize: fontSize.lg,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addColorBtn: {
+    padding: '7px 14px',
+    borderRadius: radii.sm,
+    border: `1px dashed ${colors.border}`,
+    backgroundColor: 'transparent',
+    cursor: 'pointer',
+    fontSize: fontSize.base,
+    color: colors.textSecondary,
+    marginTop: 4,
+  },
+  stockGrid: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8,
+    marginTop: 4,
+  },
+  stockRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+  },
+  colorDot: {
+    width: 14,
+    height: 14,
+    borderRadius: radii.full,
+    border: `1px solid ${colors.border}`,
+    flexShrink: 0,
+  },
+  colorLabel: {
+    fontSize: fontSize.base,
+    color: colors.textSecondary,
+    minWidth: 80,
+  },
+  stockInput: {
+    width: 80,
+    height: 36,
+    border: `1px solid ${colors.border}`,
+    borderRadius: radii.sm,
+    padding: '0 10px',
+    fontSize: fontSize.md,
+    textAlign: 'center',
+    backgroundColor: colors.inputBg,
+    outline: 'none',
+  },
+  chipRow: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 4,
+  },
+  chip: {
+    padding: '7px 16px',
+    borderRadius: radii.full,
+    border: `1px solid ${colors.border}`,
+    backgroundColor: colors.white,
+    cursor: 'pointer',
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.medium,
+    color: colors.textSecondary,
+    transition: `all ${transition.fast}`,
+  },
+  chipActive: {
+    backgroundColor: colors.accent,
+    color: colors.white,
+    borderColor: colors.accent,
+  },
+  fileInput: {
+    marginBottom: 10,
+    fontSize: fontSize.md,
+  },
+  preview: {
+    width: 120,
+    height: 120,
+    objectFit: 'cover',
+    borderRadius: radii.lg,
+    border: `1px solid ${colors.border}`,
+  },
+  checkboxLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.medium,
+    color: colors.text,
+    cursor: 'pointer',
+  },
+  checkbox: {
+    width: 18,
+    height: 18,
+    accentColor: colors.accent,
+    cursor: 'pointer',
+  },
+  buttonRow: {
+    display: 'flex',
+    gap: 12,
+    marginTop: 8,
+    justifyContent: 'flex-end',
+  },
+  cancelBtn: {
+    padding: '10px 24px',
+    borderRadius: radii.lg,
+    border: `1px solid ${colors.border}`,
+    backgroundColor: colors.white,
+    cursor: 'pointer',
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+  },
+  saveBtn: {
+    padding: '10px 28px',
+    borderRadius: radii.lg,
+    border: 'none',
+    backgroundColor: colors.accent,
+    color: colors.white,
+    cursor: 'pointer',
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.bold,
+  },
+  error: {
+    backgroundColor: colors.redLight,
+    color: colors.redDark,
+    padding: '12px 16px',
+    borderRadius: radii.md,
+    fontSize: fontSize.base,
+    marginBottom: 16,
+  },
+  fieldError: {
+    color: colors.redDark,
+    fontSize: fontSize.sm,
+    marginTop: 6,
+    marginBottom: 4,
+  },
 };

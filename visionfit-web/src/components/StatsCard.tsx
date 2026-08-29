@@ -1,4 +1,5 @@
 import React from 'react';
+import { colors, radii, fontSize, fontWeight, shadow, transition } from '../theme';
 
 interface Props {
   title: string;
@@ -7,9 +8,19 @@ interface Props {
   color?: string;
 }
 
-export default function StatsCard({ title, value, subtitle, color = '#6C3BC6' }: Props) {
+export default function StatsCard({ title, value, subtitle, color = colors.accent }: Props) {
   return (
-    <div style={styles.card}>
+    <div
+      style={styles.card}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = shadow.cardHover;
+        e.currentTarget.style.transform = 'translateY(-2px)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = shadow.card;
+        e.currentTarget.style.transform = 'translateY(0)';
+      }}
+    >
       <div style={{ ...styles.accent, backgroundColor: color }} />
       <div style={styles.body}>
         <div style={styles.title}>{title}</div>
@@ -22,16 +33,33 @@ export default function StatsCard({ title, value, subtitle, color = '#6C3BC6' }:
 
 const styles: Record<string, React.CSSProperties> = {
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: colors.white,
+    borderRadius: radii.xl,
     overflow: 'hidden',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+    boxShadow: shadow.card,
     flex: 1,
     minWidth: 200,
+    transition: `box-shadow ${transition.base}, transform ${transition.base}`,
   },
   accent: { height: 4 },
-  body: { padding: '16px 20px' },
-  title: { fontSize: 12, fontWeight: 600, color: '#888', textTransform: 'uppercase', letterSpacing: 0.5 },
-  value: { fontSize: 28, fontWeight: 800, color: '#111', marginTop: 4 },
-  subtitle: { fontSize: 12, color: '#aaa', marginTop: 4 },
+  body: { padding: '18px 22px' },
+  title: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  value: {
+    fontSize: 26,
+    fontWeight: fontWeight.extrabold,
+    color: colors.text,
+    marginTop: 6,
+    lineHeight: 1.2,
+  },
+  subtitle: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    marginTop: 4,
+  },
 };

@@ -78,4 +78,46 @@ router.delete('/:id', adminAuth, async (req, res) => {
   }
 });
 
+router.patch('/:id/stock', adminAuth, async (req, res) => {
+  try {
+    const { stock, lowStockThreshold } = req.body;
+    const update = {};
+    if (stock) update.stock = stock;
+    if (lowStockThreshold !== undefined) update.lowStockThreshold = lowStockThreshold;
+
+    const product = await Product.findByIdAndUpdate(req.params.id, update, { new: true });
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    res.json(product);
+  } catch (error) {
+    console.error('Update stock error:', error);
+    res.status(500).json({ error: error.message || 'Server error' });
+  }
+});
+
+router.get('/admin/low-stock', adminAuth, async (req, res) => {
+  try {
+    const threshold = Number(req.query.threshold) || 5;
+    const products = await Product.find({
+      'stock': { $elemMatch: { quantity: { $lte: threshold } } }
+    }).sort({ createdAt: -1 });
+
+    const lowStock = products.map(p => ({
+      _id: p._id,
+      name: p.name,
+      image: p.image,
+      category: p.category,
+      colors: p.colors,
+      stock: p.stock.filter(s => s.quantity <= threshold),
+      lowStockThreshold: threshold,
+    }));
+
+    res.json(lowStock);
+  } catch (error) {
+    console.error('Low stock error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;

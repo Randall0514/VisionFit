@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { colors, radii, fontSize, fontWeight, transition, shadow } from '../theme';
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, sessionExpired, clearSessionExpired } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -48,6 +48,11 @@ export default function Login() {
           <p style={styles.subheading}>Sign in to your admin account</p>
 
           <form onSubmit={handleSubmit} style={styles.form}>
+            {sessionExpired && (
+              <div style={styles.sessionExpired} onClick={clearSessionExpired}>
+                Your session has expired. Please log in again.
+              </div>
+            )}
             {error && <div style={styles.error}>{error}</div>}
 
             <div style={styles.field}>
@@ -222,5 +227,14 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: radii.md,
     fontSize: fontSize.base,
     lineHeight: 1.4,
+  },
+  sessionExpired: {
+    backgroundColor: colors.yellowLight,
+    color: colors.yellowDark,
+    padding: '12px 16px',
+    borderRadius: radii.md,
+    fontSize: fontSize.base,
+    lineHeight: 1.4,
+    cursor: 'pointer',
   },
 };

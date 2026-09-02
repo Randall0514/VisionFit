@@ -1,5 +1,5 @@
-import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 const LOCAL_IP = '192.168.1.11';
 const API_URL = Platform.select({
@@ -55,17 +55,6 @@ const api = {
     return result;
   },
 
-  async register(data) {
-    const response = await fetch(`${API_URL}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.error || 'Registration failed');
-    return result;
-  },
-
   async login(email, password) {
     const response = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
@@ -100,7 +89,82 @@ const api = {
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'Update failed');
     return result;
-  }
+  },
+
+  async getProducts(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const url = query ? `${API_URL}/products?${query}` : `${API_URL}/products`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Failed to fetch products');
+    if (Array.isArray(result)) {
+      return { products: result };
+    }
+    return result;
+  },
+
+  async getProduct(id) {
+    const response = await fetch(`${API_URL}/products/${id}`);
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Product not found');
+    return result;
+  },
+
+  async getFavorites() {
+    const headers = await authHeaders();
+    const response = await fetch(`${API_URL}/favorites`, { headers });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Failed to fetch favorites');
+    if (Array.isArray(result)) {
+      return { favorites: result };
+    }
+    return result;
+  },
+
+  async addFavorite(productId) {
+    const headers = { 'Content-Type': 'application/json', ...(await authHeaders()) };
+    const response = await fetch(`${API_URL}/favorites/${productId}`, {
+      method: 'POST',
+      headers,
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Failed to add favorite');
+    return result;
+  },
+
+  async removeFavorite(productId) {
+    const headers = await authHeaders();
+    const response = await fetch(`${API_URL}/favorites/${productId}`, {
+      method: 'DELETE',
+      headers,
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Failed to remove favorite');
+    return result;
+  },
+
+  async getOrders() {
+    const headers = await authHeaders();
+    const response = await fetch(`${API_URL}/orders`, { headers });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Failed to fetch orders');
+    if (Array.isArray(result)) {
+      return { orders: result };
+    }
+    return result;
+  },
+
+  async createOrder(data) {
+    const headers = { 'Content-Type': 'application/json', ...(await authHeaders()) };
+    const response = await fetch(`${API_URL}/orders`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data)
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Failed to create order');
+    return result;
+  },
 };
 
 export { getToken };

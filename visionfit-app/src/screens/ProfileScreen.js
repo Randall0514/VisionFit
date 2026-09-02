@@ -61,10 +61,8 @@ export default function ProfileScreen({ navigation }) {
   const fetchUser = useCallback(async () => {
     try {
       const data = await api.getMe();
-      console.log('PROFILE API RESPONSE:', JSON.stringify(data));
       setUser(data.user);
     } catch (err) {
-      console.log('PROFILE API ERROR:', err.message);
       Alert.alert('Error', 'Could not load profile');
     } finally {
       setLoading(false);
@@ -138,7 +136,7 @@ export default function ProfileScreen({ navigation }) {
       <ScrollView contentContainerStyle={s.content}>
         <View style={s.header}>
           <Text style={s.title}>Profile</Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => Alert.alert('Settings', 'Settings coming soon')}>
             <Ionicons name="settings-outline" size={21} />
           </TouchableOpacity>
         </View>
@@ -160,7 +158,7 @@ export default function ProfileScreen({ navigation }) {
         <View style={s.orders}>
           <View style={s.ordersHead}>
             <Text style={s.ordersTitle}>My orders</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => Alert.alert('Orders', 'Order history coming soon')}>
               <Text style={s.all}>All orders</Text>
             </TouchableOpacity>
           </View>
@@ -181,7 +179,7 @@ export default function ProfileScreen({ navigation }) {
 
         <View style={s.grid}>
           {ACTIONS.map(([icon, label]) => (
-            <TouchableOpacity style={s.action} key={label}>
+            <TouchableOpacity style={s.action} key={label} onPress={() => Alert.alert(label, `${label} feature coming soon`)}>
               <View style={s.actionIcon}>
                 <Ionicons name={icon} size={21} />
               </View>

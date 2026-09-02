@@ -1,13 +1,22 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function OnboardingScreen({ navigation }) {
+  const handleGetStarted = async () => {
+    await AsyncStorage.setItem('onboarding_done', 'done');
+    navigation.replace('Loading');
+  };
+
+  const handleLogin = async () => {
+    await AsyncStorage.setItem('onboarding_done', 'done');
+    navigation.replace('Auth');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-
-        {/* Eye Icon Graphic */}
         <View style={styles.iconContainer}>
           <View style={styles.outerCircle}>
             <View style={styles.innerCircle}>
@@ -25,16 +34,15 @@ export default function OnboardingScreen({ navigation }) {
       </View>
 
       <View style={styles.footer}>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate('MainTabs')}
-        >
+        <TouchableOpacity style={styles.button} onPress={handleGetStarted}>
           <Text style={styles.buttonText}>Get started  ›</Text>
         </TouchableOpacity>
 
-        <Text style={styles.loginText}>
-          Already screening with us? <Text style={styles.loginLink}>Log in</Text>
-        </Text>
+        <TouchableOpacity onPress={handleLogin}>
+          <Text style={styles.loginText}>
+            Already screening with us? <Text style={styles.loginLink}>Log in</Text>
+          </Text>
+        </TouchableOpacity>
 
         <View style={styles.pagination}>
           <View style={[styles.dot, styles.activeDot]} />

@@ -199,7 +199,7 @@ export default function AuthScreen({ navigation }) {
           </TouchableOpacity>
 
           {signIn ? (
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => Alert.alert('Coming Soon', 'Password reset will be available in a future update.')}>
               <Text style={s.forgot}>Forgot password?</Text>
             </TouchableOpacity>
           ) : (

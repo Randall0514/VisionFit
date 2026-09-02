@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CartProvider } from './src/context/CartContext';
 
 import LoadingScreen from './src/screens/LoadingScreen';
 import AuthScreen from './src/screens/AuthScreen';
 import VerificationScreen from './src/screens/VerificationScreen';
+import OnboardingScreen from './src/screens/OnboardingScreen';
 import DashboardScreen   from './src/screens/DashboardScreen';
 import CatalogScreen     from './src/screens/CatalogScreen';
 import ProfileScreen     from './src/screens/ProfileScreen';
@@ -16,6 +19,7 @@ import FaceScanScreen from './src/screens/FaceScanScreen';
 import ProductScreen from './src/screens/ProductScreen';
 import CartScreen from './src/screens/CartScreen';
 import CheckoutScreen from './src/screens/CheckoutScreen';
+import SearchScreen from './src/screens/SearchScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab   = createBottomTabNavigator();
@@ -52,7 +56,7 @@ function MainTabs() {
               return <Ionicons name="menu-outline" color={color} size={size + 3} />;
             case 'Favorites':
               return <Ionicons name={focused ? 'heart' : 'heart-outline'} color={color} size={size} />;
-            case 'Cart':
+            case 'CartTab':
               return <Ionicons name={focused ? 'cart' : 'cart-outline'} color={color} size={size} />;
             case 'Profile':
               return <Ionicons name={focused ? 'person' : 'person-outline'} color={color} size={size} />;
@@ -65,27 +69,42 @@ function MainTabs() {
       <Tab.Screen name="Home" component={DashboardScreen} />
       <Tab.Screen name="Category" component={CatalogScreen} />
       <Tab.Screen name="Favorites" component={FavoritesScreen} />
-      <Tab.Screen name="Cart" component={CartScreen} />
+      <Tab.Screen name="CartTab" component={CartScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }
 
 export default function App() {
+  const [showOnboarding, setShowOnboarding] = useState(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem('onboarding_done').then((val) => {
+      setShowOnboarding(val !== 'done');
+    });
+  }, []);
+
+  if (showOnboarding === null) return null;
+
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Loading" component={LoadingScreen} />
-        <Stack.Screen name="Auth" component={AuthScreen} />
-        <Stack.Screen name="Verification" component={VerificationScreen} />
-        <Stack.Screen name="MainTabs"   component={MainTabs} />
-        <Stack.Screen name="Prescription" component={PrescriptionScreen} />
-        <Stack.Screen name="FaceScan" component={FaceScanScreen} />
-        <Stack.Screen name="Product" component={ProductScreen} />
-        <Stack.Screen name="Cart" component={CartScreen} />
-        <Stack.Screen name="Checkout" component={CheckoutScreen} />
-        <Stack.Screen name="Catalog" component={CatalogScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <CartProvider>
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          {showOnboarding && (
+            <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+          )}
+          <Stack.Screen name="Loading" component={LoadingScreen} />
+          <Stack.Screen name="Auth" component={AuthScreen} />
+          <Stack.Screen name="Verification" component={VerificationScreen} />
+          <Stack.Screen name="MainTabs"   component={MainTabs} />
+          <Stack.Screen name="Prescription" component={PrescriptionScreen} />
+          <Stack.Screen name="FaceScan" component={FaceScanScreen} />
+          <Stack.Screen name="Product" component={ProductScreen} />
+          <Stack.Screen name="Cart" component={CartScreen} />
+          <Stack.Screen name="Checkout" component={CheckoutScreen} />
+          <Stack.Screen name="Search" component={SearchScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </CartProvider>
   );
 }

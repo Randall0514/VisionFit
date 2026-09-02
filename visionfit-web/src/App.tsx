@@ -1,7 +1,8 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import SessionWarning from './components/SessionWarning';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -14,9 +15,11 @@ import Notifications from './pages/Notifications';
 import Settings from './pages/Settings';
 import './App.css';
 
-export default function App() {
+function AppContent() {
+  const { sessionWarning, dismissSessionWarning, logout } = useAuth();
+
   return (
-    <AuthProvider>
+    <>
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
@@ -31,6 +34,19 @@ export default function App() {
           <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>
+      <SessionWarning
+        isOpen={sessionWarning}
+        onStayLoggedIn={dismissSessionWarning}
+        onLogout={logout}
+      />
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
     </AuthProvider>
   );
 }
